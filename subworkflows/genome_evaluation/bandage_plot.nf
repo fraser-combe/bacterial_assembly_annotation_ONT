@@ -1,17 +1,21 @@
+#!/usr/bin/env nextflow
+
+nextflow.enable.dsl = 2
+
 process BandagePlot {
-    conda '/opt/conda/envs/typing'
-    tag "$params.file_name Bandage plot"
+    tag "${sample} Bandage plot"
+    label 'bandage'
     publishDir "${final_outdir}/bandage", mode: 'copy'
 
     input:
-    path assembly_graph
+    tuple val(sample), path(assembly_graph)
     val final_outdir
 
     output:
-    path "assembly_graph.png", emit: bandage_plot
+    path "${sample}_assembly_graph.png", emit: bandage_plot
 
     script:
     """
-    Bandage image ${assembly_graph} assembly_graph.png
+    Bandage image ${assembly_graph} ${sample}_assembly_graph.png
     """
 }
