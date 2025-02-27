@@ -5,13 +5,14 @@ nextflow.enable.dsl = 2
 process FLYE_ASSEMBLY {
     tag "${sample}"
     label 'assembly'
-    publishDir "${outdir}/flye", mode: 'copy', overwrite: true
+    publishDir "${final_outdir}/flye", mode: 'copy', overwrite: true
 
     input:
     tuple val(sample), path(reads)
     val genome_size
     val cpu
     val memory
+    val final_outdir
 
     output:
     tuple val(sample), path("${sample}.assembly.fasta"), emit: assembly
@@ -23,6 +24,9 @@ process FLYE_ASSEMBLY {
     script:
     """
     set -euo pipefail
+
+    # Debug: Check final_outdir
+    echo "Final outdir: ${final_outdir}" > debug_outdir.txt
 
     # Log Flye version
     flye --version > ${sample}.flye_version.txt

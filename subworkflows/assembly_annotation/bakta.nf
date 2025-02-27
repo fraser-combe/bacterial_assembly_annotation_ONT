@@ -1,62 +1,54 @@
+#!/usr/bin/env nextflow
+
+nextflow.enable.dsl = 2
+
 process BaktaAnnotation {
-    conda '/opt/conda/envs/genome-tools'
-    tag "$params.file_name"
+    tag "${sample} Bakta annotation"
+    label 'bakta'
     publishDir "${final_outdir}/bakta", mode: 'copy'
     publishDir "${final_outdir}/logging", mode: 'copy', pattern: '*.{log,txt}', overwrite: true
 
     input:
-    path assembly_fasta
+    tuple val(sample), path(assembly_fasta)  // From Medaka polished FASTA
     val final_outdir
-    val sample
     val db_path
     val nproc
     val genus
     val species
 
     output:
-    path "${sample}.embl", emit: bakta_embl
-    path "${sample}.faa", emit: bakta_faa
-    path "${sample}.ffn", emit: bakta_ffn
-    path "${sample}.fna", emit: bakta_fna
-    path "${sample}.gbff", emit: bakta_gbff
-    path "${sample}.gff3", emit: bakta_gff3
-    path "${sample}.hypotheticals.faa", emit: bakta_hypotheticals_faa
-    path "${sample}.hypotheticals.tsv", emit: bakta_hypotheticals_tsv
-    path "${sample}.tsv", emit: bakta_tsv
-    path "${sample}.txt", emit: bakta_txt
-    path "${sample}.svg", emit: bakta_plot
+    path "${sample}.embl", emit: bakta_embl, optional: true
+    path "${sample}.faa", emit: bakta_faa, optional: true
+    path "${sample}.ffn", emit: bakta_ffn, optional: true
+    path "${sample}.fna", emit: bakta_fna, optional: true
+    path "${sample}.gbff", emit: bakta_gbff, optional: true
+    path "${sample}.gff3", emit: bakta_gff3, optional: true
+    path "${sample}.hypotheticals.faa", emit: bakta_hypotheticals_faa, optional: true
+    path "${sample}.hypotheticals.tsv", emit: bakta_hypotheticals_tsv, optional: true
+    path "${sample}.tsv", emit: bakta_tsv, optional: true
+    path "${sample}.txt", emit: bakta_txt, optional: true
+    path "${sample}.svg", emit: bakta_plot, optional: true
 
     script:
     """
-    echo "Starting Bakta annotation with input: ${sample}.fasta"
-    mkdir -p bakta_output
-    if [[ -f "${assembly_fasta}" ]]; then
-        echo "Input file found, proceeding with Bakta..."
-        bakta_cmd="bakta --db ${db_path} --threads ${nproc} --output bakta_output --prefix ${sample} --force --skip-crispr"
-        if [[ -n '${genus}' ]]; then
-            bakta_cmd+=" --genus '${genus}'"
-        fi
-        if [[ -n '${species}' ]]; then
-            bakta_cmd+=" --species '${species}'"
-        fi
-        \$bakta_cmd ${assembly_fasta}
+    set -euo pipefail
 
-        # List the contents of the bakta_output directory for debugging
-        echo "Contents of bakta_output directory:"
-        ls bakta_output
+    echo "Starting Bakta annotation with input: ${assembly_fasta}"
 
-        # Move files to final destination, handling cases where files may not exist
-        for ext in embl faa ffn fna gbff gff3 hypotheticals.faa hypotheticals.tsv tsv txt svg; do
-            if [[ -f "bakta_output/${sample}.\$ext" ]]; then
-                mv "bakta_output/${sample}.\$ext" .
-            else
-                echo "Warning: File bakta_output/${sample}.\$ext not found."
-            fi
-        done
-
-        echo "Bakta processing complete."
-    else
-        echo "Input file not found, skipping Bakta."
+    # Construct Bakta command
+    bakta_cmd="bakta --db ${db_path} --threads ${nproc} --prefix ${sample} --force --skip-crispr"
+    if [ -n "${genus}" ]; then
+        bakta_cmd+=" --genus '${genus}'"
     fi
+    if [ -n "${species}" ]; then
+        bakta_cmd+=" --species '${species}'"
+    fi
+
+    # Run Bakta
+    \$bakta_cmd ${assembly_fasta}
+
+    # Debug: List output files
+    echo "Contents of current directory after Bakta:"
+    ls -l
     """
 }

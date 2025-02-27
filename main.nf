@@ -4,13 +4,16 @@ nextflow.enable.dsl = 2
 
 /*
 ========================================================================================
-    Basic Bacterial Genome Assembly Workflow with Flye and Bandage
+    Bacterial Genome Assembly Workflow with Flye, Medaka, Bandage, QUAST, and Bakta
 ========================================================================================
 */
 
-// Include Flye module and Bandage subworkflow
+// Include modules and subworkflows
 include { FLYE_ASSEMBLY } from './modules/flye'
-include { BandagePlot } from './subworkflows/genome_evaluation/bandage_plot'  // Updated import name to match process
+include { MEDAKA_POLISH } from './modules/medaka'
+include { BandagePlot } from './subworkflows/genome_evaluation/bandage_plot'
+include { QUASTEvaluation } from './subworkflows/genome_evaluation/quast'
+include { BaktaAnnotation } from './subworkflows/assembly_annotation/bakta'
 
 // Default parameters
 params.reads = null                     // Force user to specify reads
@@ -19,6 +22,11 @@ params.sample = "sample"                // Default sample name
 params.genome_size = "5m"               // Default genome size (5 Mb, Flye format)
 params.nproc = 8                        // Default CPU threads
 params.memory = "16.GB"                 // Default memory allocation
+params.medaka_auto_model = true         // Enable Medaka auto model selection
+params.medaka_model = "r1041_e82_400bps_sup_v5.0.0"  // Default Medaka model
+params.bakta_db = "~/bakta/db"          // Default Bakta database path (adjust as needed)
+params.genus = ""                       // Optional genus for Bakta
+params.species = ""                     // Optional species for Bakta
 params.run_name = System.getenv('RUN_NAME') ?: "flye_assembly_${new Date().format('yyyyMMdd_HHmmss')}" // Simplified run name
 
 // Validate critical parameters
@@ -31,14 +39,19 @@ final_outdir = "${params.outdir}/${params.sample}_${params.run_name}"
 
 // Log pipeline info
 log.info """\
-    Basic Flye Assembly Workflow with Bandage
-    ========================================
+    Bacterial Genome Assembly Workflow with Flye, Medaka, Bandage, QUAST, and Bakta
+    ==============================================================================
     Reads            : ${params.reads}
     Output Dir       : ${final_outdir}
     Sample Name      : ${params.sample}
     Genome Size      : ${params.genome_size}
     Threads          : ${params.nproc}
     Memory           : ${params.memory}
+    Medaka Auto Model: ${params.medaka_auto_model}
+    Medaka Model     : ${params.medaka_model}
+    Bakta DB Path    : ${params.bakta_db}
+    Genus            : ${params.genus ?: 'Not specified'}
+    Species          : ${params.species ?: 'Not specified'}
     Run Name         : ${params.run_name}
     """.stripIndent()
 
@@ -54,13 +67,42 @@ workflow {
         reads_ch,
         params.genome_size,
         params.nproc,
-        params.memory
+        params.memory,
+        final_outdir
+    )
+
+    // Medaka polishing
+    medakaOutput = MEDAKA_POLISH(
+        flyeOutput.assembly,
+        reads_ch.map { it[1] },
+        params.medaka_auto_model,
+        params.medaka_model,
+        params.nproc,
+        params.memory,
+        final_outdir
     )
 
     // Bandage plot using the Flye assembly graph
     BandagePlot(
-        flyeOutput.graph,  // Pass the GFA output tuple [sample, assembly_graph.gfa]
+        flyeOutput.graph,
         final_outdir
+    )
+
+    // QUAST evaluation using the Medaka polished fasta
+    QUASTEvaluation(
+        medakaOutput.polished_fasta,
+        final_outdir,
+        params.nproc
+    )
+
+    // Bakta annotation using the Medaka polished fasta
+    BaktaAnnotation(
+        medakaOutput.polished_fasta,
+        final_outdir,
+        params.bakta_db,
+        params.nproc,
+        params.genus,
+        params.species
     )
 }
 
