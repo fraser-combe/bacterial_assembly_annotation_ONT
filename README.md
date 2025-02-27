@@ -2,7 +2,7 @@
 Nextflow pipeline for bacterial genome assembly and visualization using Oxford Nanopore (ONT) data.
 
 ## Overview
-BactONTics is a lightweight, reproducible pipeline for assembling bacterial genomes from ONT raw reads and visualizing the assembly graph. It uses Flye for assembly and Bandage for generating a graphical representation of the contigs, all executed within Docker containers for simplicity and consistency.
+BactONTics is a lightweight, reproducible pipeline for assembling bacterial genomes from ONT raw reads and visualizing the assembly graph. It uses Flye for assembly and Bandage for generating a graphical representation of the contigs and genome annotation with Bakta, all executed within Docker containers for simplicity and consistency.
 
 ### Current Features
 - **Assembly**: Flye assembles raw ONT reads into contigs using a user-specified or default genome size (e.g., 5 Mb).
