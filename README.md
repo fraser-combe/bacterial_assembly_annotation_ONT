@@ -138,6 +138,8 @@ Genus/Species: Optional parameters; specify with --genus "Escherichia" and --spe
 Memory: Bakta can be memory-intensive with the full database; 16 GB should suffice for most bacterial genomes, but increase if needed.
 
 # Expected output
+
+```
 N E X T F L O W  ~  version 24.10.4
 Launching `main.nf` [some_name] DSL2 - revision: ...
 [xx/xxxxxx] process > FLYE_ASSEMBLY (sample) [100%] 1 of 1, cached ✔
@@ -145,7 +147,7 @@ Launching `main.nf` [some_name] DSL2 - revision: ...
 [zz/zzzzzz] process > BandagePlot (sample Bandage plot) [100%] 1 of 1, cached ✔
 [ww/wwwwww] process > QUASTEvaluation (sample QUAST evaluation) [100%] 1 of 1, cached ✔
 [vv/vvvvvv] process > BaktaAnnotation (sample Bakta annotation) [100%] 1 of 1 ✔
-
+```
 
 ## License
 This work is licensed under a [Creative Commons Attribution-NonCommercial 4.0 International License](https://creativecommons.org/licenses/by-nc/4.0/).
