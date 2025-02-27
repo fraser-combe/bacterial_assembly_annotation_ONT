@@ -37,6 +37,8 @@ nextflow run main.nf --reads "/path/to/your/reads.fastq.gz"
 ```
 
 # Optional Parameters
+
+```
 --sample "sample_name": Set the sample name (default: sample).
 --outdir "output_dir": Set the output directory (default: output).
 --genome_size "size": Genome size for Flye (e.g., 5m for 5 Mb, default: 5m).
@@ -47,6 +49,7 @@ nextflow run main.nf --reads "/path/to/your/reads.fastq.gz"
 --bakta_db "path": Path to Bakta database (default: ~/bakta/db).
 --genus "Genus": Genus for Bakta annotation (optional).
 --species "Species": Species for Bakta annotation (optional).
+```
 
 # Output
 
@@ -70,6 +73,7 @@ sample.embl, .faa, .ffn, .fna, .gbff, .gff3, .hypotheticals.faa, .hypotheticals.
 ```
 
 # Pipeline Structure
+
 ```
 bactontics/
 ├── main.nf                # Main workflow script
@@ -84,7 +88,9 @@ bactontics/
 │       └── bakta.nf        # Bakta annotation process
 └── nextflow.config        # Configuration file
 ```
+
 # Configuration
+
 Edit nextflow.config to adjust defaults:
 
 ```
@@ -113,9 +119,12 @@ docker { enabled = true }
 
 ```bash
 nextflow run main.nf --reads "/home/fraser/bioinformatics/test_reads_BYHO.fastq.gz"
-
+```
 
 #Optional
+
+```bash
+
 nextflow run main.nf \
     --reads "/home/fraser/bioinformatics/test_reads_BYHO.fastq.gz" \
     --sample "test_sample" \
@@ -123,6 +132,7 @@ nextflow run main.nf \
     --medaka_auto_model false \
     --medaka_model "r941_min_high_g360"
     --bakta_db "/path/to/bakta/db"
+```
   
 Genus/Species: Optional parameters; specify with --genus "Escherichia" and --species "coli" if known.
 Memory: Bakta can be memory-intensive with the full database; 16 GB should suffice for most bacterial genomes, but increase if needed.
