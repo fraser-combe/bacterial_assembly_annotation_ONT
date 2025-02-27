@@ -24,7 +24,7 @@ BactONTics is a lightweight, reproducible pipeline for assembling bacterial geno
 ## Installation
 Clone the repository:
 ```bash
-git clone https://github.com/yourusername/bactontics.git
+https://github.com/fraser-combe/bacterial_assembly_annotation_ONT
 cd bactontics
 ```
 
