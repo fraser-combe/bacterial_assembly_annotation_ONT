@@ -20,16 +20,15 @@ include { BaktaAnnotation } from './subworkflows/assembly_annotation/bakta'
 params.reads = null                     // Force user to specify reads
 params.outdir = "output"                // Base output directory
 params.sample = "sample"                // Default sample name
-params.genome_size = "5m"               // Default genome size (5 Mb, Flye format)
-params.nproc = 8                        // Default CPU threads
+params.nproc = 8                        // Default CPU threads (overridden in CI)
 params.memory = "16.GB"                 // Default memory allocation
 params.medaka_auto_model = true         // Enable Medaka auto model selection
 params.medaka_model = "r1041_e82_400bps_sup_v5.0.0"  // Default Medaka model
-params.bakta_db = "~/bakta/db"          // Default Bakta database path
+params.bakta_db = ""                    // Empty uses light DB in container; override with full DB path
 params.genus = ""                       // Optional genus for Bakta
 params.species = ""                     // Optional species for Bakta
 params.dnaapler_mode = "all"            // Default DNAApler mode
-params.run_name = System.getenv('RUN_NAME') ?: "flye_assembly_${new Date().format('yyyyMMdd_HHmmss')}" // Simplified run name
+params.run_name = System.getenv('RUN_NAME') ?: "flye_assembly_${new Date().format('yyyyMMdd_HHmmss')}"
 
 // Validate critical parameters
 if (!params.reads) {
@@ -46,12 +45,11 @@ log.info """\
     Reads            : ${params.reads}
     Output Dir       : ${final_outdir}
     Sample Name      : ${params.sample}
-    Genome Size      : ${params.genome_size}
     Threads          : ${params.nproc}
     Memory           : ${params.memory}
     Medaka Auto Model: ${params.medaka_auto_model}
     Medaka Model     : ${params.medaka_model}
-    Bakta DB Path    : ${params.bakta_db}
+    Bakta DB         : ${params.bakta_db ?: 'Using light DB in container'}
     Genus            : ${params.genus ?: 'Not specified'}
     Species          : ${params.species ?: 'Not specified'}
     DNAApler Mode    : ${params.dnaapler_mode}
@@ -68,7 +66,6 @@ workflow {
     // Flye assembly
     flyeOutput = FLYE_ASSEMBLY(
         reads_ch,
-        params.genome_size,
         params.nproc,
         params.memory,
         final_outdir
@@ -108,8 +105,8 @@ workflow {
     )
 
     // Bakta annotation using the DNAApler reoriented fasta
-    // Conditionally run Bakta if DB exists
-    if (file(params.bakta_db).exists()) {
+    if (params.bakta_db && file(params.bakta_db, checkIfExists: false).exists()) {
+        log.info "Using user-provided Bakta DB: ${params.bakta_db}"
         BaktaAnnotation(
             dnaaplerOutput.reoriented_fasta,
             final_outdir,
@@ -119,8 +116,16 @@ workflow {
             params.species
         )
     } else {
-        log.info "Skipping Bakta annotation: Bakta DB path '${params.bakta_db}' not found"
-    }    
+        log.info "No valid Bakta DB path provided; using light DB from container"
+        BaktaAnnotation(
+            dnaaplerOutput.reoriented_fasta,
+            final_outdir,
+            "default",  // Use "default" to signal light DB
+            params.nproc,
+            params.genus,
+            params.species
+        )
+    }
 }
 
 // Completion handler
