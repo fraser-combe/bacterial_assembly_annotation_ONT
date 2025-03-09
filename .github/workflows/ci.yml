@@ -29,7 +29,6 @@ jobs:
           docker pull staphb/dnaapler:1.0.1
           docker pull staphb/quast:5.2.0
           docker pull staphb/bakta:latest
-          docker pull quay.io/biocontainers/biopython:1.81--py39h43f5750_0
 
       - name: Run Pipeline with Test Data
         run: |
