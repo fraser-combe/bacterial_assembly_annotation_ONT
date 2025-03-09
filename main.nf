@@ -4,13 +4,14 @@ nextflow.enable.dsl = 2
 
 /*
 ========================================================================================
-    Bacterial Genome Assembly Workflow with Flye, Medaka, Bandage, QUAST, and Bakta
+    Bacterial Genome Assembly Workflow with Flye, Medaka, DNAApler, Bandage, QUAST, and Bakta
 ========================================================================================
 */
 
 // Include modules and subworkflows
 include { FLYE_ASSEMBLY } from './modules/flye'
 include { MEDAKA_POLISH } from './modules/medaka'
+include { DNAAplerReorient } from './modules/dnaapler'
 include { BandagePlot } from './subworkflows/genome_evaluation/bandage_plot'
 include { QUASTEvaluation } from './subworkflows/genome_evaluation/quast'
 include { BaktaAnnotation } from './subworkflows/assembly_annotation/bakta'
@@ -24,9 +25,10 @@ params.nproc = 8                        // Default CPU threads
 params.memory = "16.GB"                 // Default memory allocation
 params.medaka_auto_model = true         // Enable Medaka auto model selection
 params.medaka_model = "r1041_e82_400bps_sup_v5.0.0"  // Default Medaka model
-params.bakta_db = "~/bakta/db"          // Default Bakta database path (adjust as needed)
+params.bakta_db = "~/bakta/db"          // Default Bakta database path
 params.genus = ""                       // Optional genus for Bakta
 params.species = ""                     // Optional species for Bakta
+params.dnaapler_mode = "all"            // Default DNAApler mode
 params.run_name = System.getenv('RUN_NAME') ?: "flye_assembly_${new Date().format('yyyyMMdd_HHmmss')}" // Simplified run name
 
 // Validate critical parameters
@@ -39,8 +41,8 @@ final_outdir = "${params.outdir}/${params.sample}_${params.run_name}"
 
 // Log pipeline info
 log.info """\
-    Bacterial Genome Assembly Workflow with Flye, Medaka, Bandage, QUAST, and Bakta
-    ==============================================================================
+    Bacterial Genome Assembly Workflow with Flye, Medaka, DNAApler, Bandage, QUAST, and Bakta
+    ========================================================================================
     Reads            : ${params.reads}
     Output Dir       : ${final_outdir}
     Sample Name      : ${params.sample}
@@ -52,6 +54,7 @@ log.info """\
     Bakta DB Path    : ${params.bakta_db}
     Genus            : ${params.genus ?: 'Not specified'}
     Species          : ${params.species ?: 'Not specified'}
+    DNAApler Mode    : ${params.dnaapler_mode}
     Run Name         : ${params.run_name}
     """.stripIndent()
 
@@ -82,28 +85,42 @@ workflow {
         final_outdir
     )
 
+    // DNAApler reorientation
+    dnaaplerOutput = DNAAplerReorient(
+        medakaOutput.polished_fasta,
+        params.dnaapler_mode,
+        params.nproc,
+        params.memory,
+        final_outdir
+    )
+
     // Bandage plot using the Flye assembly graph
     BandagePlot(
         flyeOutput.graph,
         final_outdir
     )
 
-    // QUAST evaluation using the Medaka polished fasta
+    // QUAST evaluation using the DNAApler reoriented fasta
     QUASTEvaluation(
-        medakaOutput.polished_fasta,
+        dnaaplerOutput.reoriented_fasta,
         final_outdir,
         params.nproc
     )
 
-    // Bakta annotation using the Medaka polished fasta
-    BaktaAnnotation(
-        medakaOutput.polished_fasta,
-        final_outdir,
-        params.bakta_db,
-        params.nproc,
-        params.genus,
-        params.species
-    )
+    // Bakta annotation using the DNAApler reoriented fasta
+    // Conditionally run Bakta if DB exists
+    if (file(params.bakta_db).exists()) {
+        BaktaAnnotation(
+            dnaaplerOutput.reoriented_fasta,
+            final_outdir,
+            params.bakta_db,
+            params.nproc,
+            params.genus,
+            params.species
+        )
+    } else {
+        log.info "Skipping Bakta annotation: Bakta DB path '${params.bakta_db}' not found"
+    }    
 }
 
 // Completion handler
