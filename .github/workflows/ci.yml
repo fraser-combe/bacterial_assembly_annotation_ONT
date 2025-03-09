@@ -21,15 +21,6 @@ jobs:
       - name: Validate Nextflow Config
         run: nextflow config main.nf
 
-      - name: Pull Docker Images
-        run: |
-          docker pull staphb/flye:2.9.5
-          docker pull staphb/medaka:2.0.1
-          docker pull staphb/bandage:0.8.1
-          docker pull staphb/dnaapler:1.0.1
-          docker pull staphb/quast:5.2.0
-          docker pull staphb/bakta:1.10.4-5.1-light
-
       - name: Run Pipeline with Test Data
         run: |
           nextflow run main.nf \
