@@ -10,7 +10,7 @@ process BaktaAnnotation {
     input:
     tuple val(sample), path(input_fasta)
     val final_outdir
-    val db_path  // Can be empty string or a path
+    val db_path  // "default" or a valid path; empty/non-existent means use container DB
     val cpu
     val genus
     val species
@@ -20,7 +20,7 @@ process BaktaAnnotation {
     path "VERSION", emit: version
 
     script:
-    def db_option = db_path ? "--db ${db_path}" : ""
+    def db_option = (db_path && db_path != "default" && file(db_path, checkIfExists: false).exists()) ? "--db ${db_path}" : ""
     def genus_option = genus ? "--genus ${genus}" : ""
     def species_option = species ? "--species ${species}" : ""
     """
@@ -31,7 +31,7 @@ process BaktaAnnotation {
 
     # Run Bakta
     bakta \\
-        --input ${input_fasta} \\
+        ${input_fasta} \\
         --output ${sample}_bakta \\
         --prefix ${sample} \\
         --threads ${cpu} \\

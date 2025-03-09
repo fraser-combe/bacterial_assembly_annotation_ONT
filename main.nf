@@ -123,7 +123,7 @@ workflow {
         BaktaAnnotation(
             dnaaplerOutput.reoriented_fasta,
             final_outdir,
-            null,  // Pass null to indicate default DB in container
+            "default",  // Use "default" to signal light DB
             params.nproc,
             params.genus,
             params.species
