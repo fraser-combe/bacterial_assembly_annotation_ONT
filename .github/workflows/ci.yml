@@ -36,4 +36,3 @@ jobs:
             --reads "test_data/test_reads.fastq.gz" \
             --nproc 2 \
             --memory 4.GB \
-            -resume
