@@ -20,7 +20,6 @@ include { BaktaAnnotation } from './subworkflows/assembly_annotation/bakta'
 params.reads = null                     // Force user to specify reads
 params.outdir = "output"                // Base output directory
 params.sample = "sample"                // Default sample name
-params.genome_size = "5m"               // Default genome size (5 Mb, Flye format)
 params.nproc = 8                        // Default CPU threads (overridden in CI)
 params.memory = "16.GB"                 // Default memory allocation
 params.medaka_auto_model = true         // Enable Medaka auto model selection
@@ -46,7 +45,6 @@ log.info """\
     Reads            : ${params.reads}
     Output Dir       : ${final_outdir}
     Sample Name      : ${params.sample}
-    Genome Size      : ${params.genome_size}
     Threads          : ${params.nproc}
     Memory           : ${params.memory}
     Medaka Auto Model: ${params.medaka_auto_model}
@@ -68,7 +66,6 @@ workflow {
     // Flye assembly
     flyeOutput = FLYE_ASSEMBLY(
         reads_ch,
-        params.genome_size,
         params.nproc,
         params.memory,
         final_outdir
