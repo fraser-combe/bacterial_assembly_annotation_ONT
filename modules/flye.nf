@@ -9,7 +9,6 @@ process FLYE_ASSEMBLY {
 
     input:
     tuple val(sample), path(reads)
-    val genome_size
     val cpu
     val memory
     val final_outdir
@@ -34,7 +33,6 @@ process FLYE_ASSEMBLY {
     # Run Flye assembly with minimal options
     flye \
         --nano-hq ${reads} \
-        --genome-size ${genome_size} \
         --threads ${cpu} \
         --out-dir ${sample}_flye \
         2>&1 | tee ${sample}_flye.log
